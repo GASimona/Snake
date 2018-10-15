@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Snake</title>
+</head>
+<style>
+    td {
+        width: 20px;
+        height: 20px;
+    }
+
+    table {
+        border: 30px solid black !important;
+        background-color: rgb(95, 170, 240);
+    }
+
+    tr,
+    td,
+    table {
+        margin: 0px;
+        border: solid 0px;
+        padding: 0px;
+    }
+
+    .buton {
+        width: 400px;
+        height: 30px;
+        font-size: 20px;
+        background-color: rgb(95, 170, 240);
+    }
+
+    .scor {
+        background-color: rgb(95, 170, 240);
+        text-align: center;
+
+    }
+
+    .sfatsitJoc {
+        width: 400px;
+        position: relative;
+        top: -500px;
+        /* left: 400px; */
+    }
+
+    h2 {
+        color: crimson;
+        font-size: 30px;
+        background-color: rgb(95, 170, 240);
+        text-align: center;
+
+    }
+</style>
+
+<body style="background: rgb(24, 58, 133)">
+    <center>
+        <h2>
+            <b>Snake</b>
+        </h2>
+        <!-- <div class="scor">
+            <span>
+                <b>Viteza = </b>
+            </span>
+            <span id="viteza"></span>
+        </div> -->
+        <div class="scor">
+            <span>
+                <b>Level = </b>
+            </span>
+            <span id="vit"></span>
+        </div>
+        <div class="scor">
+            <span>
+                <b>Cirese = </b>
+            </span>
+            <span id="nr"></span>
+        </div>
+        <div class="scor">
+            <span>
+                <b>Record cirese = </b>
+            </span>
+            <span id="record"></span>
+        </div>
+        <table id="tab"></table>
+        <div class="sfatsitJoc" id="sfarsitJoc">
+            <div class="buton" align="center">Game Over</div>
+            <img src="over.webp" alt="Bomba" width="400px" height="140px">
+            <br>
+            <button onclick="reset()" class="buton">Play</button>
+        </div>
+        <audio id="bomba">
+            <source src="bomb.mp3" type="audio/mpeg">
+        </audio>
+        <p>Pentru Play/Pause apasa "Space"</p>
+        <p>
+            <i>By Simona</i>
+        </p>
+    </center>
+    <script>
+        var nc = 50;
+        var nl = 25;
+        var a = 0;
+        var b = 0;
+        var tabel = document.getElementById('tab');
+        var sarpe = [];
+        var cirese = [];
+        var directie;
+        var c = 0;
+        var s = 0;
+        var STANGA = 0;
+        var DREAPTA = 1;
+        var SUS = 2;
+        var JOS = 3;
+        var dx = [0, 0, -1, 1];
+        var dy = [-1, 1, 0, 0];
+        var directie = JOS;
+        var viteza = 200;
+        var nrCirese = 0;
+        var level = 1;
+        var recordcirese = localStorage.recordcirese;
+        if (recordcirese == undefined) {
+            recordcirese = 0;
+        }
+
+        function TabelS() {
+            for (i = 0; i < nl; ++i) {
+                var lin = document.createElement('tr');
+                tabel.appendChild(lin);
+                for (j = 0; j < nc; ++j) {
+                    var col = document.createElement('td');
+                    lin.appendChild(col);
+                }
+            }
+        }
+
+        function StartJoc() {
+            if (c == 0 && s == 0) {
+                c = setInterval(AdaugaCireasaInLista, 3000);
+                s = setInterval(lungesteSarpe, viteza);
+            }
+            else {
+                StopInterval();
+            }
+        }
+
+        function StopInterval() {
+            clearInterval(c);
+            clearInterval(s);
+            c = 0;
+            s = 0;
+        }
+
+        function start() {
+            document.getElementById('sfarsitJoc').setAttribute('style', 'display: none');
+        }
+
+        function reset() {
+            start();
+            stergeCiresele();
+            stergeSarpele();
+            sarpe = [{ 'x': 0, 'y': 0 }, { 'x': 0, 'y': 1 }, { 'x': 0, 'y': 2 }, { 'x': 1, 'y': 2 }];
+            cirese = [];
+            directie = JOS;
+            coloreazaSarpele();
+            AdaugaCireasaInLista();
+            nrCirese = 0;
+            level = 1;
+            viteza = 200;
+            document.getElementById('vit').innerHTML = level;
+            document.getElementById('nr').innerHTML = nrCirese;
+            document.getElementById('record').innerHTML = recordcirese;
+            // document.getElementById('viteza').innerHTML = viteza;
+        }
+
+        function lungesteSarpe() {
+            var xnou = (((sarpe[sarpe.length - 1].x + dx[directie]) + nl) % nl);
+            var ynou = (((sarpe[sarpe.length - 1].y + dy[directie]) + nc) % nc);
+            if ((!suntPesteSarpe(xnou, ynou)) && (suntInTabla(xnou, ynou, nl, nc))) {
+                stergeSarpele();
+                sarpe.push({ x: xnou, y: ynou });
+                if (!suntPeCireasa(xnou, ynou)) {
+                    sarpe = sarpe.slice(1);
+                }
+                else {
+                    stop.innerHTML = " ";
+                    for (i = 0; i < cirese.length; ++i) {
+                        if ((cirese[i].x == xnou) && (cirese[i].y == ynou)) {
+                            cirese.splice(i, 1);
+                        }
+                    }
+                    ++nrCirese;
+                    document.getElementById('nr').innerHTML = nrCirese;
+                    if (nrCirese > recordcirese) {
+                        recordcirese = nrCirese;
+                        localStorage.setItem("recordcirese", recordcirese);
+                        document.getElementById('record').innerHTML = recordcirese;
+                    }
+                    cresteViteza();
+                }
+                coloreazaSarpele();
+            }
+            else {
+                StopInterval();
+                document.getElementById('sfarsitJoc').removeAttribute('style');
+                document.getElementById('bomba').play();
+            }
+
+        }
+
+        function AdaugaCireasaInLista() {
+            var a = Math.floor(Math.random() * nl);
+            var b = Math.floor(Math.random() * nc);
+
+            while (suntPesteAltaCireasa(a, b)) {
+                a = Math.floor(Math.random() * nl);
+                b = Math.floor(Math.random() * nc);
+            }
+
+            cirese.push({ x: a, y: b });
+            deseneazacireasaincelula(tabel.children[a].children[b], 'ciresica.jpg');
+        }
+
+        function coloreazaSarpele() {
+            for (i = 0; i < sarpe.length; ++i) {
+                var x = sarpe[i].x;
+                var y = sarpe[i].y;
+                tabel.children[x].children[y].style.background = "darkred";
+
+            }
+        }
+
+        function stergeSarpele() {
+            for (i = 0; i < sarpe.length; ++i) {
+                var x = sarpe[i].x;
+                var y = sarpe[i].y;
+                tabel.children[x].children[y].style.background = "rgb(95, 170, 240)";
+            }
+        }
+
+        function deseneazacireasaincelula(celula, poza) {
+            var x = document.createElement('img');
+            x.setAttribute('src', poza);
+            celula.appendChild(x);
+            x.style.width = "80%";
+        }
+
+
+        function stergeCiresele() {
+            for (i = 0; i < cirese.length; ++i) {
+                tabel.children[cirese[i].x].children[cirese[i].y].innerHTML = " ";
+            }
+        }
+
+        function suntPesteSarpe(x, y) {
+            for (i = 0; i < sarpe.length; ++i) {
+                if ((sarpe[i].x == x) && (sarpe[i].y == y)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function suntPesteAltaCireasa(x, y) {
+            for (i = 0; i < cirese.length; ++i) {
+                if ((cirese[i].x == x) && (cirese[i].y == y)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function suntInTabla(x, y, nl, nc) {
+            if (x < 0 || x >= nl) {
+                return false;
+            }
+            if (y < 0 || y >= nc) {
+                return false;
+            }
+            return true;
+        }
+
+        function suntPeCireasa(x, y) {
+            for (i = 0; i < (cirese.length); i++) {
+                if ((x == cirese[i].x) && (y == cirese[i].y)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function cresteViteza() {
+            if ((sarpe.length - 4) % 5 == 0) {
+                StopInterval();
+                viteza = viteza - 20;
+                StartJoc();
+                ++level;
+                document.getElementById('vit').innerHTML = level;
+                // document.getElementById('viteza').innerHTML = viteza;
+            }
+        }
+
+        function uniKeyCode(event) {
+            var key = event.which || event.keyCode;
+            // stanga
+            if (key == 37) {
+                if (directie != DREAPTA) {
+                    directie = STANGA;
+                }
+                return false;
+
+            }
+            // dreapta
+            if (key == 39) {
+                if (directie != STANGA) {
+                    directie = DREAPTA;
+                }
+                return false;
+
+            }
+            // sus
+            if (key == 38) {
+                if (directie != JOS) {
+                    directie = SUS;
+                }
+                return false;
+
+            }
+            // jos
+            if (key == 40) {
+                if (directie != SUS) {
+                    directie = JOS;
+                }
+                return false;
+
+            }
+            if (key == 32) {
+                StartJoc();
+                return false;
+
+            }
+        }
+        document.onkeydown = uniKeyCode;
+
+        start();
+        TabelS();
+        reset();
+        coloreazaSarpele();
+
+
+
+
+    </script>
+</body>
+
+</html>
